@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>QCM CAN / CNA - STI2D SIN</title>
+  <style>
+    /* Désactiver la sélection de texte pour décourager le copier-coller */
+    * {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+
+    /* Autoriser la sélection dans les champs de saisie (code élève / code prof) */
+    input, textarea {
+      -webkit-user-select: text;
+      -moz-user-select: text;
+      -ms-user-select: text;
+      user-select: text;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #f2f2f2;
+    }
+    h1, h2, h3 {
+      text-align: center;
+    }
+    .bloc {
+      background: #ffffff;
+      padding: 10px 15px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      border-left: 5px solid #0074D9;
+    }
+    .question {
+      background: #ffffff;
+      padding: 10px 15px;
+      margin-bottom: 12px;
+      border-radius: 8px;
+      border-left: 4px solid #555;
+    }
+    .question h3 {
+      margin-top: 0;
+    }
+    .choix {
+      margin-left: 15px;
+    }
+    .btn {
+      padding: 10px 20px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    .btn-valider {
+      background: #28a745;
+      color: white;
+    }
+    .btn-reset {
+      background: #dc3545;
+      color: white;
+      margin-left: 10px;
+    }
+    .btn-identite {
+      background: #0074D9;
+      color: white;
+      margin-right: 5px;
+    }
+    .btn-prof {
+      background: #ff8800;
+      color: white;
+    }
+    .btn-modal {
+      padding: 6px 14px;
+      font-size: 14px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      margin: 4px;
+    }
+    .btn-ok {
+      background: #28a745;
+      color: #fff;
+    }
+    .btn-cancel {
+      background: #dc3545;
+      color: #fff;
+    }
+    .resultat {
+      margin-top: 20px;
+      padding: 10px 15px;
+      border-radius: 8px;
+      background: #ffffff;
+      border-left: 5px solid #28a745;
+    }
+    .bonne-reponse {
+      color: #155724;
+      font-weight: bold;
+    }
+    .mauvaise-reponse {
+      color: #721c24;
+      font-weight: bold;
+    }
+    .explication {
+      font-size: 0.9em;
+      margin-top: 4px;
+      padding-left: 10px;
+      border-left: 2px dashed #ccc;
+    }
+    .warning {
+      color: #c00;
+      font-weight: bold;
+    }
+    .ok {
+      color: #155724;
+      font-weight: bold;
+    }
+    #qcm-form {
+      display: none; /* caché tant que l'identité n'est pas validée ou répétition non autorisée */
+    }
+    /* Pied de page */
+    footer {
+      margin-top: 30px;
+      text-align: center;
+      font-weight: bold;
+      color: #0074D9;
+    }
+
+    /* Fenêtre modale pour le code professeur */
+    #prof-modal {
+      display: none; /* caché par défaut */
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.4);
+    }
+    #prof-modal-content {
+      background-color: #fefefe;
+      margin: 15% auto;
+      padding: 20px;
+      border-radius: 10px;
+      border: 1px solid #888;
+      width: 300px;
+      text-align: center;
+    }
+    #prof-code-input {
+      width: 90%;
+      padding: 6px;
+      margin-top: 8px;
+      margin-bottom: 10px;
+    }
+
+    /* Image d'en-tête */
+    .header-image {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    .header-image img {
+      max-width: 700px;
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<!-- Désactiver le menu contextuel (clic droit) -->
+<body oncontextmenu="return false;">
+
+  <!-- IMAGE D'EN-TÊTE -->
+  <div class="header-image">
+    <img src="images/CAN.png" alt="Schéma convertisseur A/N - N/A">
+  </div>
+
+  <h1>QCM - Convertisseurs CAN / CNA</h1>
+  <h2>STI2D - Spécialité SIN</h2>
+
+  <div class="bloc">
+    <h3>Identification de l'élève</h3>
+    <p>
+      <label for="select-eleve"><strong>Choisir votre nom :</strong></label><br>
+      <select id="select-eleve">
+        <option value="">-- Sélectionner votre nom --</option>
+        <option value="BAUER kylian">BAUER kylian</option>
+        <option value="EBEL kévin">EBEL kévin</option>
+        <option value="MUNDSCHA Yaniss">MUNDSCHA Yaniss</option>
+        <option value="NGAN Jonathan">NGAN Jonathan</option>
+        <option value="NIEDERST Edouard">NIEDERST Edouard</option>
+        <option value="OBERLE Baptiste">OBERLE Baptiste</option>
+      </select>
+    </p>
+    <p>
+      <label for="input-code-eleve"><strong>Entrer votre code élève (personnel) :</strong></label><br>
+      <input type="password" id="input-code-eleve" maxlength="6" placeholder="Code élève">
+      <button type="button" class="btn btn-identite" onclick="validerIdentite()">Valider mon identité</button>
+      <button type="button" class="btn btn-prof" onclick="ouvrirModalProf()">Autoriser une nouvelle tentative (professeur)</button>
+    </p>
+    <p id="etat-identite"></p>
+    <p class="warning" id="id-warning" style="display:none;">
+      Merci de choisir votre nom et d'entrer un code élève valide pour accéder au QCM.
+    </p>
+  </div>
+
+  <form id="qcm-form">
+    <div id="questions-container"></div>
+
+    <button type="button" class="btn btn-valider" id="btn-valider" onclick="corriger()">Valider mes réponses</button>
+    <button type="reset" class="btn btn-reset" onclick="reinitialiser()">Réinitialiser</button>
+  </form>
+
+  <div id="resultat" class="resultat" style="display:none;"></div>
+
+  <footer>
+    Dr. A. BLORFAN – Lycée ORT 2025/2026
+  </footer>
+
+  <!-- Fenêtre modale pour le code professeur -->
+  <div id="prof-modal">
+    <div id="prof-modal-content">
+      <h3>Code professeur</h3>
+      <p>Entrez le mot de passe pour autoriser la répétition :</p>
+      <input type="password" id="prof-code-input" placeholder="******">
+      <br>
+      <button class="btn-modal btn-ok" onclick="validerCodeProf()">OK</button>
+      <button class="btn-modal btn-cancel" onclick="fermerModalProf()">Annuler</button>
+    </div>
+  </div>
+
+  <script>
+    // ===== Protection basique anti-copie / touches spéciales =====
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "F11" || e.key === "F12") {
+        e.preventDefault();
+        return false;
+      }
+      if (e.ctrlKey) {
+        const k = e.key.toLowerCase();
+        if (k === "c" || k === "p" || k === "s" || k === "u") {
+          e.preventDefault();
+          return false;
+        }
+        if (e.shiftKey && (k === "i" || k === "j" || k === "c")) {
+          e.preventDefault();
+          return false;
+        }
+      }
+    });
+
+    const PROF_CODE = "15101971";
+
+    const ELEVE_CODES = {
+      "BAUER kylian": "284759",
+      "EBEL kévin": "391624",
+      "MUNDSCHA Yaniss": "485130",
+      "NGAN Jonathan": "572819",
+      "NIEDERST Edouard": "693247",
+      "OBERLE Baptiste": "710536"
+    };
+
+    let CURRENT_STUDENT_NAME = "";
+    let CURRENT_STUDENT_CODE = "";
+    let CURRENT_KEY = "";
+    let identiteValidee = false;
+    let allowMultipleAttempts = false;
+    let antiCheatLock = false;
+
+    const selectEleve = document.getElementById("select-eleve");
+    const codeInput = document.getElementById("input-code-eleve");
+    const etatIdentite = document.getElementById("etat-identite");
+    const warningId = document.getElementById("id-warning");
+    const qcmForm = document.getElementById("qcm-form");
+    const btnValider = document.getElementById("btn-valider");
+    const resultatDiv = document.getElementById("resultat");
+    const profModal = document.getElementById("prof-modal");
+    const profCodeInput = document.getElementById("prof-code-input");
+
+    function formatDateFr(isoString) {
+      if (!isoString) return "(date inconnue)";
+      const d = new Date(isoString);
+      if (isNaN(d.getTime())) return "(date inconnue)";
+      return d.toLocaleString("fr-FR", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    }
+
+    function verrouillerPourChangementOnglet() {
+      if (!identiteValidee || antiCheatLock) return;
+      antiCheatLock = true;
+      qcmForm.style.display = "none";
+      btnValider.disabled = true;
+      btnValider.textContent = "QCM verrouillé";
+      warningId.style.display = "block";
+      warningId.textContent =
+        "Changement d'onglet ou de fenêtre détecté. QCM verrouillé. " +
+        "Demandez au professeur de vous réautoriser.";
+    }
+
+    document.addEventListener("visibilitychange", function () {
+      if (document.hidden) {
+        verrouillerPourChangementOnglet();
+      }
+    });
+
+    window.addEventListener("blur", function () {
+      verrouillerPourChangementOnglet();
+    });
+
+    function validerIdentite() {
+      const nom = selectEleve.value;
+      const codeSaisi = codeInput.value.trim();
+
+      identiteValidee = false;
+      qcmForm.style.display = "none";
+      etatIdentite.textContent = "";
+      etatIdentite.className = "";
+      warningId.style.display = "none";
+      resultatDiv.style.display = "none";
+      resultatDiv.innerHTML = "";
+      antiCheatLock = false;
+      allowMultipleAttempts = false;
+
+      if (!nom || !codeSaisi) {
+        warningId.style.display = "block";
+        warningId.textContent = "Merci de choisir votre nom et d'entrer un code élève.";
+        return;
+      }
+
+      if (!ELEVE_CODES[nom]) {
+        warningId.style.display = "block";
+        warningId.textContent = "Nom inconnu. Merci de vérifier la sélection.";
+        return;
+      }
+
+      const codeOfficiel = ELEVE_CODES[nom];
+      if (codeSaisi !== codeOfficiel) {
+        warningId.style.display = "block";
+        warningId.textContent = "Code élève incorrect pour ce nom.";
+        return;
+      }
+
+      CURRENT_STUDENT_NAME = nom;
+      CURRENT_STUDENT_CODE = codeOfficiel;
+      CURRENT_KEY = "QCM_CAN_CNA_" + CURRENT_STUDENT_NAME + "_" + CURRENT_STUDENT_CODE;
+
+      const sauvegarde = localStorage.getItem(CURRENT_KEY);
+      if (sauvegarde && sauvegarde !== "") {
+        const data = JSON.parse(sauvegarde);
+        resultatDiv.style.display = "block";
+        resultatDiv.innerHTML =
+          "<h3>Résultat déjà enregistré (note conservée)</h3>" +
+          "<p><strong>Nom :</strong> " + (data.nom || CURRENT_STUDENT_NAME) + "</p>" +
+          "<p><strong>Note :</strong> " + (data.note20 || "?") + " / 20</p>" +
+          "<p><strong>Date du contrôle :</strong> " + formatDateFr(data.date) + "</p>";
+
+        warningId.style.display = "block";
+        warningId.textContent = "Vous avez déjà validé ce QCM. Pour refaire le contrôle (note conservée), demandez au professeur d'autoriser la répétition.";
+        identiteValidee = true;
+        qcmForm.style.display = "none";
+        btnValider.disabled = true;
+        btnValider.textContent = "QCM déjà validé";
+        return;
+      }
+
+      etatIdentite.textContent = "Identité validée. Vous pouvez répondre au QCM.";
+      etatIdentite.className = "ok";
+      identiteValidee = true;
+      qcmForm.style.display = "block";
+      btnValider.disabled = false;
+      btnValider.textContent = "Valider mes réponses";
+    }
+
+    function ouvrirModalProf() {
+      if (!CURRENT_STUDENT_NAME || !CURRENT_STUDENT_CODE || !CURRENT_KEY) {
+        alert("Sélectionnez d'abord l'élève et validez son identité avant d'autoriser une répétition.");
+        return;
+      }
+      profCodeInput.value = "";
+      profModal.style.display = "block";
+      profCodeInput.focus();
+    }
+
+    function fermerModalProf() {
+      profModal.style.display = "none";
+    }
+
+    function validerCodeProf() {
+      const codeProf = profCodeInput.value.trim();
+      if (codeProf === "") {
+        alert("Veuillez entrer le code professeur.");
+        return;
+      }
+      if (codeProf !== PROF_CODE) {
+        alert("Code professeur incorrect.");
+        return;
+      }
+
+      allowMultipleAttempts = true;
+      antiCheatLock = false;
+      etatIdentite.textContent = "Répétition / réouverture autorisée par le professeur pour " + CURRENT_STUDENT_NAME + ". (La première note reste enregistrée)";
+      etatIdentite.className = "ok";
+      warningId.style.display = "none";
+
+      qcmForm.style.display = "block";
+      btnValider.disabled = false;
+      btnValider.textContent = "Valider mes réponses";
+
+      fermerModalProf();
+    }
+
+    const questions = [
+      {
+        question: "Un CNA à 5 bits produit une tension de sortie de 0,2 V pour le mot binaire 00001. Quelle est sa tension de pleine échelle ?",
+        choix: ["5,0 V", "6,2 V", "6,4 V", "7,0 V"],
+        bonnes: ["6,2 V"],
+        explication: "Le poids du LSB est 0,2V. La pleine échelle (11111) vaut 31 × 0,2V = 6,2V"
+      },
+      {
+        question: "Un CNA à 5 bits produit 5V pour le mot 10100. Que vaut la tension de sortie pour le mot 11101 ?",
+        choix: ["6,25 V", "7,25 V", "8,50 V", "9,00 V"],
+        bonnes: ["7,25 V"],
+        explication: "10100₂ = 20₁₀ → 5V, donc quantum = 5/20 = 0,25V. 11101₂ = 29₁₀ → 29 × 0,25V = 7,25V"
+      },
+      {
+        question: "Un CNA à 8 bits a une pleine échelle de 10V. Quelle tension produit le mot binaire 10010110 ?",
+        choix: ["5,88 V", "6,12 V", "7,45 V", "8,33 V"],
+        bonnes: ["5,88 V"],
+        explication: "10010110₂ = 150₁₀. Quantum = 10V/255 ≈ 0,0392V. Tension = 150 × 0,0392 ≈ 5,88V"
+      },
+      {
+        question: "Un CNA à 10 bits (pleine échelle 5V) reçoit le mot 1100101101. Quelle est la tension de sortie ?",
+        choix: ["3,97 V", "4,25 V", "4,52 V", "4,75 V"],
+        bonnes: ["3,97 V"],
+        explication: "1100101101₂ = 813₁₀. Quantum = 5V/1023 ≈ 0,00489V. Tension = 813 × 0,00489 ≈ 3,97V"
+      },
+      {
+        question: "Un CAN 10 bits avec une gamme 0-5,12V a quelle valeur numérique maximale en sortie ?",
+        choix: ["1023", "1024", "512", "255"],
+        bonnes: ["1023"],
+        explication: "Sur n bits, la valeur maximale est 2ⁿ - 1 = 1024 - 1 = 1023"
+      },
+      {
+        question: "Quelle est la tension pleine échelle d'un CAN 10 bits calibré 0-5,12V ?",
+        choix: ["5,00 V", "5,12 V", "10,00 V", "5,10 V"],
+        bonnes: ["5,12 V"],
+        explication: "La pleine échelle est la tension maximale mesurable, soit 5,12V dans ce cas"
+      },
+      {
+        question: "Quelle est la résolution d'un CAN 10 bits avec une gamme 0-5,12V ?",
+        choix: ["5,00 mV", "10,00 mV", "20,00 mV", "2,50 mV"],
+        bonnes: ["5,00 mV"],
+        explication: "Résolution = 5,12V / (2¹⁰ - 1) = 5,12V / 1023 ≈ 0,005V = 5mV"
+      },
+      {
+        question: "Un CAN 8 bits de calibre 5,0V a quelle résolution ?",
+        choix: ["19,6 mV", "10,0 mV", "5,0 mV", "2,5 mV"],
+        bonnes: ["19,6 mV"],
+        explication: "Résolution = 5,0V / (2⁸ - 1) = 5,0V / 255 ≈ 0,0196V = 19,6mV"
+      },
+      {
+        question: "Pour mesurer 0-4,5V avec une précision de 10mV, un CAN 8 bits (calibre 5V) est-il suffisant ?",
+        choix: ["Oui", "Non"],
+        bonnes: ["Non"],
+        explication: "La résolution de 19,6mV > 10mV requis, donc insuffisant"
+      },
+      {
+        question: "Combien de bits minimum pour mesurer 0-4,5V avec une précision de 10mV ?",
+        choix: ["8 bits", "9 bits", "10 bits", "12 bits"],
+        bonnes: ["9 bits"],
+        explication: "4,5V/10mV = 450 pas → 2⁸=256 (insuffisant), 2⁹=512 (suffisant)"
+      },
+      {
+        question: "Quelle est la valeur numérique maximale d'un CAN 16 bits ?",
+        choix: ["65535", "65536", "32768", "1024"],
+        bonnes: ["65535"],
+        explication: "2¹⁶ - 1 = 65536 - 1 = 65535"
+      },
+      {
+        question: "Quelle est la résolution d'un CAN 16 bits sur la gamme -20V/+20V ?",
+        choix: ["0,61 mV", "1,22 mV", "2,44 mV", "5,00 mV"],
+        bonnes: ["0,61 mV"],
+        explication: "Gamme totale = 40V. Résolution = 40V / (2¹⁶ - 1) ≈ 40V/65535 ≈ 0,00061V = 0,61mV"
+      }
+    ];
+
+    const container = document.getElementById("questions-container");
+
+    questions.forEach((q, index) => {
+      const div = document.createElement("div");
+      div.className = "question";
+
+      const titre = document.createElement("h3");
+      titre.textContent = "Question " + (index + 1) + " :";
+      div.appendChild(titre);
+
+      const enonce = document.createElement("p");
+      enonce.textContent = q.question;
+      div.appendChild(enonce);
+
+      const blocChoix = document.createElement("div");
+      blocChoix.className = "choix";
+
+      q.choix.forEach((choix, i) => {
+        const idInput = "q" + index + "_choix" + i;
+
+        const label = document.createElement("label");
+        label.setAttribute("for", idInput);
+
+        const input = document.createElement("input");
+        input.type = "radio";
+        input.name = "q" + index;
+        input.value = choix;
+        input.id = idInput;
+
+        label.appendChild(input);
+        label.appendChild(document.createTextNode(" " + choix));
+
+        const br = document.createElement("br");
+        blocChoix.appendChild(label);
+        blocChoix.appendChild(br);
+      });
+
+      div.appendChild(blocChoix);
+
+      const expDiv = document.createElement("div");
+      expDiv.className = "explication";
+      expDiv.id = "explication-" + index;
+      expDiv.style.display = "none";
+      div.appendChild(expDiv);
+
+      container.appendChild(div);
+    });
+
+    function corriger() {
+      if (!identiteValidee || !CURRENT_KEY) {
+        warningId.style.display = "block";
+        warningId.textContent = "Vous devez d'abord valider votre identité pour répondre au QCM.";
+        return;
+      }
+
+      const sauvegarde = localStorage.getItem(CURRENT_KEY);
+      const hasOldResult = !!sauvegarde;
+
+      if (hasOldResult && !allowMultipleAttempts) {
+        const data = JSON.parse(sauvegarde);
+        resultatDiv.style.display = "block";
+        resultatDiv.innerHTML =
+          "<h3>Résultat déjà enregistré (note conservée)</h3>" +
+          "<p><strong>Nom :</strong> " + (data.nom || CURRENT_STUDENT_NAME) + "</p>" +
+          "<p><strong>Note :</strong> " + (data.note20 || "?") + " / 20</p>" +
+          "<p><strong>Date du contrôle :</strong> " + formatDateFr(data.date) + "</p>";
+
+        warningId.style.display = "block";
+        warningId.textContent = "Vous avez déjà validé ce QCM. Répétition interdite sans autorisation du professeur.";
+        btnValider.disabled = true;
+        btnValider.textContent = "QCM déjà validé";
+        return;
+      }
+
+      let score = 0;
+      let nbQuestions = questions.length;
+
+      questions.forEach((q, index) => {
+        const nom = "q" + index;
+        const radios = document.getElementsByName(nom);
+        let reponse = null;
+
+        for (let r of radios) {
+          if (r.checked) {
+            reponse = r.value;
+            break;
+          }
+        }
+
+        const expDiv = document.getElementById("explication-" + index);
+        expDiv.style.display = "block";
+
+        if (reponse === null) {
+          expDiv.innerHTML = "<span class='mauvaise-reponse'>Pas de réponse.</span> " +
+            "<br><strong>Bonne réponse :</strong> " + q.bonnes.join(", ") +
+            "<br>" + q.explication;
+        } else if (q.bonnes.includes(reponse)) {
+          score++;
+          expDiv.innerHTML = "<span class='bonne-reponse'>Bonne réponse ✔</span> " +
+            "<br><strong>Bonne réponse :</strong> " + q.bonnes.join(", ") +
+            "<br>" + q.explication;
+        } else {
+          expDiv.innerHTML = "<span class='mauvaise-reponse'>Mauvaise réponse ✖</span> " +
+            "<br><strong>Bonne réponse :</strong> " + q.bonnes.join(", ") +
+            "<br>" + q.explication;
+        }
+      });
+
+      const note20 = (score / nbQuestions) * 20;
+      const nowIso = new Date().toISOString();
+
+      resultatDiv.style.display = "block";
+      resultatDiv.innerHTML =
+        "<h3>Résultat pour " + CURRENT_STUDENT_NAME + "</h3>" +
+        "<p>Score : <strong>" + score + " / " + nbQuestions + "</strong></p>" +
+        "<p>Note sur 20 : <strong>" + note20.toFixed(1) + " / 20</strong></p>" +
+        "<p>Date du contrôle : <strong>" + formatDateFr(nowIso) + "</strong></p>" +
+        (hasOldResult
+          ? "<p><em>Remarque : la première note officielle reste celle déjà enregistrée.</em></p>"
+          : "");
+
+      if (!hasOldResult) {
+        const data = {
+          nom: CURRENT_STUDENT_NAME,
+          code: CURRENT_STUDENT_CODE,
+          score: score,
+          nbQuestions: nbQuestions,
+          note20: note20.toFixed(1),
+          date: nowIso
+        };
+        localStorage.setItem(CURRENT_KEY, JSON.stringify(data));
+      }
+
+      if (!allowMultipleAttempts) {
+        btnValider.disabled = true;
+        btnValider.textContent = "QCM déjà validé";
+      }
+    }
+
+    function reinitialiser() {
+      questions.forEach((q, index) => {
+        const expDiv = document.getElementById("explication-" + index);
+        expDiv.style.display = "none";
+        expDiv.innerHTML = "";
+      });
+      resultatDiv.style.display = "none";
+      resultatDiv.innerHTML = "";
+      warningId.style.display = "none";
+    }
+  </script>
+</body>
+</html>
